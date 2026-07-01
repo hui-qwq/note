@@ -1089,12 +1089,353 @@ JWT 是登录成功后后端发给前端的身份令牌。
 jar 包里不仅可以有代码，也可以有静态资源，比如 META-INF/resources/doc.html。
 ```
 
----
 
-## 23. 课堂/答辩表述模板
 
-如果老师问：**Day1 学了什么？**
+## 24. Java 反射机制
 
-可以这样回答：
+### 24.1 什么是反射？
 
-> Day1 主要理解了苍穹外卖项目的基础架构。项目采用 Spring Boot 分层开发，Controller 层负责接收前端请求，Service 层负责业务逻辑，Mapper 层通过 MyBatis 操作数据库。Spring 通过注解扫描创建 Bean，并通过依赖注入把对象组装起来。项目中还配置了 Swagger/Knife4j，用于自动生成接口文档，方便接口测试和前后端联调。同时理解了静态资源映射、JWT 登录令牌、application.yml 配置绑定等内容。
+反射可以理解为：
+
+> **程序在运行时，读取和操作类的信息。**
+
+普通写法：
+
+```
+User user = new User();
+user.sayHello();
+```
+
+这种写法是：写代码时就知道要创建 `User`，调用 `sayHello()`。
+
+反射写法：
+
+```
+Class<?> clazz = User.class;
+Object obj = clazz.getConstructor().newInstance();
+Method method = clazz.getDeclaredMethod("sayHello");
+method.invoke(obj);
+```
+
+这种写法是：运行时再去读取 `User` 类的信息，然后创建对象、调用方法。
+
+一句话：
+
+```
+普通调用：提前知道操作谁
+反射调用：运行时再去找操作谁
+```
+
+------
+
+### 24.2 反射读的不是 `.java` 源码
+
+Java 程序运行时，真正执行的是编译后的 `.class` 文件。
+
+```
+User.java
+   ↓ 编译
+User.class
+   ↓ JVM 运行
+```
+
+反射读取的是 `.class` 里的类信息，比如：
+
+```
+类名
+属性
+方法
+构造方法
+注解
+参数类型
+返回值类型
+```
+
+所以反射不是“看源码”，而是“看类的结构信息”。
+
+------
+
+### 24.3 反射中几个重要对象
+
+假设有一个类：
+
+```
+public class User {
+    private String name;
+    private int age;
+
+    public User() {
+    }
+
+    public void sayHello() {
+        System.out.println("你好");
+    }
+}
+```
+
+反射中常见 4 个核心类：
+
+```
+Class：表示整个类的信息，比如 User.class
+Field：表示属性，比如 name、age
+Method：表示方法，比如 sayHello()
+Constructor：表示构造方法，比如 User()
+```
+
+可以这样理解：
+
+```
+User 类
+├── Class：User 类的说明书
+├── Field：属性的说明书
+├── Method：方法的说明书
+└── Constructor：构造方法的说明书
+```
+
+------
+
+### 24.4 读取属性和方法
+
+```
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+public class ReflectionDemo {
+    public static void main(String[] args) {
+
+        Class<?> clazz = User.class;
+
+        Field[] fields = clazz.getDeclaredFields();
+
+        for (Field field : fields) {
+            System.out.println("属性名：" + field.getName());
+            System.out.println("属性类型：" + field.getType().getName());
+        }
+
+        Method[] methods = clazz.getDeclaredMethods();
+
+        for (Method method : methods) {
+            System.out.println("方法名：" + method.getName());
+            System.out.println("返回值类型：" + method.getReturnType().getName());
+        }
+    }
+}
+```
+
+变量解释：
+
+```
+clazz：User 类的说明书对象
+fields：User 类中所有属性组成的数组
+field：当前遍历到的某一个属性
+methods：User 类中所有方法组成的数组
+method：当前遍历到的某一个方法
+```
+
+------
+
+### 24.5 通过反射创建对象
+
+普通创建对象：
+
+```
+User user = new User();
+```
+
+反射创建对象：
+
+```
+Class<?> clazz = User.class;
+
+Object obj = clazz.getConstructor().newInstance();
+
+User user = (User) obj;
+```
+
+解释：
+
+```
+clazz.getConstructor()
+获取 User 的无参构造方法
+
+newInstance()
+调用构造方法创建对象
+
+Object obj
+反射创建出来的对象默认是 Object 类型
+
+User user = (User) obj
+把 Object 强制转换成 User
+```
+
+------
+
+### 24.6 通过反射修改 private 属性
+
+```
+Class<?> clazz = User.class;
+
+Object obj = clazz.getConstructor().newInstance();
+
+Field nameField = clazz.getDeclaredField("name");
+
+nameField.setAccessible(true);
+
+nameField.set(obj, "张三");
+```
+
+解释：
+
+```
+getDeclaredField("name")
+获取 name 这个属性
+
+setAccessible(true)
+允许访问 private 属性
+
+nameField.set(obj, "张三")
+把 obj 对象里的 name 属性改成 "张三"
+```
+
+------
+
+### 24.7 通过反射调用方法
+
+```
+Class<?> clazz = User.class;
+
+Object obj = clazz.getConstructor().newInstance();
+
+Method method = clazz.getDeclaredMethod("sayHello");
+
+method.invoke(obj);
+```
+
+解释：
+
+```
+getDeclaredMethod("sayHello")
+获取 sayHello 这个方法
+
+method.invoke(obj)
+让 obj 对象执行 sayHello 方法
+```
+
+相当于普通写法：
+
+```
+user.sayHello();
+```
+
+------
+
+### 24.8 反射和框架的关系
+
+很多框架底层都用到了反射。
+
+#### Spring
+
+Spring 启动时会扫描类：
+
+```
+@Service
+public class UserService {
+}
+```
+
+它通过反射判断：
+
+```
+这个类上有没有 @Service？
+有的话，就创建对象，放进 Spring 容器。
+```
+
+------
+
+#### `@Autowired`
+
+```
+@Autowired
+private UserService userService;
+```
+
+Spring 通过反射发现：
+
+```
+这个属性需要注入 UserService
+```
+
+然后把容器里的 `UserService` 对象塞进去。
+
+------
+
+#### MyBatis
+
+```
+@Mapper
+public interface UserMapper {
+    User getById(Long id);
+}
+```
+
+MyBatis 通过反射读取 Mapper 接口的方法信息，然后生成代理对象，帮你执行 SQL。
+
+------
+
+#### Swagger / Knife4j
+
+Swagger 通过反射读取 Controller 上的注解：
+
+```
+@ApiOperation("员工登录")
+@PostMapping("/login")
+```
+
+然后生成接口文档。
+
+------
+
+### 24.9 反射能做什么？
+
+反射能做：
+
+```
+读取类名
+读取属性
+读取方法
+读取注解
+创建对象
+修改属性
+调用方法
+```
+
+反射一般不直接做：
+
+```
+生成 getter/setter 源代码
+修改 .java 文件
+```
+
+自动生成 getter/setter 更常见的是用：
+
+```
+IDEA 自动生成
+Lombok
+代码生成工具
+```
+
+------
+
+### 24.10 总结
+
+反射的核心是：
+
+> **把类、属性、方法、构造方法都当成对象来操作。**
+
+最重要的一句话：
+
+```
+反射 = Java 程序在运行时读取和操作类结构的能力。
+```
+
+Spring、MyBatis、Swagger 能够自动创建对象、自动注入、自动生成接口文档，本质上都离不开反射。
