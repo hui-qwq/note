@@ -1,0 +1,5 @@
+# configuration
+
+打上configuration的类里面一般会有打上Bean的方法， configuration告诉Spring，里面打上Bean方法的返回值交由IOC管理
+
+和component差不多都是把对象交由IOC管理，不同的是component是直接生成类的对象交由IOC，而configuration是把bean的返回值交给IOC，花点心思写代码configuration可以代替component

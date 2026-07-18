@@ -1,0 +1,1 @@
+## definite adj. 确定的，有期限的
